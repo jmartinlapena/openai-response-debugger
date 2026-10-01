@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenAI Response Debugger</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>OpenAI Response Debugger</h1>
+      <p>Busca una respuesta por ID o abre un JSON guardado para inspeccionarla.</p>
+    </div>
+    <div id="health" class="pill">Comprobando backend...</div>
+  </header>
+
+  <main class="layout">
+    <div class="command-bar">
+      <form id="load-form" class="response-search">
+        <label for="response-id">Response ID</label>
+        <input id="response-id" name="response_id" placeholder="resp_..." autocomplete="off" required />
+        <button type="submit">Cargar</button>
+      </form>
+      <button id="import-json" type="button" class="secondary">Abrir JSON</button>
+      <input id="json-file" type="file" accept=".json,application/json" hidden />
+      <div class="response-actions">
+        <button id="collapse-all" type="button" class="secondary" disabled>Colapsar todo</button>
+        <button id="download-json" type="button" class="secondary" disabled>Exportar JSON completo</button>
+        <button id="open-composer" type="button" disabled>Continuar conversación</button>
+      </div>
+    </div>
+    <section class="panel inspector">
+      <div class="section-title inspector-title">
+        <div>
+          <h2>Inspector</h2>
+          <div id="selected-id" class="mono muted">Sin respuesta seleccionada</div>
+        </div>
+        <button id="copy-id" type="button" class="secondary" disabled>Copiar ID</button>
+      </div>
+
+      <div id="summary" class="summary-grid"></div>
+
+      <p id="source-note" class="note" role="status"></p>
+      <div id="inspector-empty" class="empty-state"><h2>Una respuesta, todo el contexto</h2><p>Carga un Response ID para explorar sus mensajes, herramientas y campos completos.</p></div>
+      <div id="inspector-content" class="hidden">
+        <nav class="view-tabs" aria-label="Vista del inspector">
+          <button type="button" data-view="trace" aria-pressed="true">Salida / traza</button>
+          <button type="button" data-view="input" aria-pressed="false">Entrada</button>
+          <button type="button" data-view="config" aria-pressed="false">Configuración</button>
+          <button type="button" data-view="json" aria-pressed="false">JSON completo</button>
+        </nav>
+        <div class="viewer-toolbar">
+          <button type="button" id="expand-all" class="secondary">Expandir todo</button>
+          <button type="button" id="copy-json" class="secondary">Copiar Response JSON</button>
+          <label class="check"><input id="decode-json" type="checkbox" checked /> Interpretar JSON en texto</label>
+        </div>
+        <div class="search-row">
+          <input id="search" type="search" aria-label="Buscar en la vista" placeholder="Buscar campos o valores en esta vista…" />
+          <span id="search-count" class="muted" role="status"></span>
+          <button type="button" id="previous-match" class="secondary" aria-label="Coincidencia anterior">↑</button>
+          <button type="button" id="next-match" class="secondary" aria-label="Coincidencia siguiente">↓</button>
+        </div>
+        <p id="view-note" class="note"></p>
+        <div id="viewer"></div>
+      </div>
+    </section>
+
+    <dialog id="composer-dialog" class="composer" aria-labelledby="composer-title">
+      <div class="section-title">
+        <h2 id="composer-title">Continuar conversación</h2>
+        <button id="close-composer" type="button" class="secondary">Cerrar</button>
+      </div>
+      <p class="note">
+        El turno nuevo usará la respuesta seleccionada como <code>previous_response_id</code>.
+        Las <code>instructions</code> anteriores no se heredan automáticamente.
+      </p>
+
+      <form id="continue-form" class="stack">
+        <label>Previous response</label>
+        <div id="fork-from" class="mono box-muted">-</div>
+
+        <label for="model">Modelo</label>
+        <input id="model" placeholder="Se toma de la respuesta seleccionada" />
+
+        <label for="instructions">Instructions para ESTE turno</label>
+        <textarea id="instructions" rows="6" placeholder="Opcional. Se rellenan con las de la respuesta seleccionada cuando existan."></textarea>
+
+        <label for="message">Nuevo input</label>
+        <textarea id="message" rows="8" placeholder="Mensaje de prueba..." required></textarea>
+
+        <div class="row between">
+          <label class="check"><input id="store" type="checkbox" checked /> store=true</label>
+          <button id="copy-config" type="button" class="secondary" disabled>Copiar config al JSON</button>
+        </div>
+
+        <label for="overrides">Overrides avanzados (JSON)</label>
+        <textarea id="overrides" rows="9" spellcheck="false">{}</textarea>
+        <p class="hint">Útil para <code>tools</code>, <code>tool_choice</code>, <code>reasoning</code>, <code>temperature</code>, etc. <code>input</code> y <code>previous_response_id</code> están protegidos por el backend.</p>
+
+        <button id="continue-button" type="submit" disabled>Enviar y cargar nueva rama</button>
+      </form>
+
+      <div id="result" class="result hidden"></div>
+    </dialog>
+  </main>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
